@@ -1,0 +1,32 @@
+#imports
+import json
+import requests
+import ssl
+import urllib.request
+
+from urllib.parse import urlencode
+
+ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+
+endpoint = 'https://maps.googleapis.com/maps/api/directions/json?'
+api_key = 'AIzaSyASU7ZbDGGc70Ak7_cAWl1-Ox3UnvYA0Ms'
+origin = input("Enter starting Point -----> ").replace(' ','+')
+destination = input("Enter ending Point -----> ").replace(' ','+')
+
+params = {"origin": origin, "destination": destination, "key": api_key}
+url_params = urlencode(params)
+url = f"{endpoint}{url_params}"
+print(url)
+
+r = requests.get(url)
+
+response = urllib.request.urlopen(url).read()
+directions = json.loads(response)
+routes = directions['routes']
+legs = routes[0]['legs']
+
+#this is what we want!!!!
+# steps[] is a list of every turn the navigation makes to get from origin to destination
+steps = legs[0]['steps']
+
+print(steps)
