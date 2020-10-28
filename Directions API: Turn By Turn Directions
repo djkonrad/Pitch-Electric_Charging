@@ -1,6 +1,6 @@
 #imports
 import json
-import requests
+#import requests
 import ssl
 import urllib.request
 
@@ -28,5 +28,24 @@ legs = routes[0]['legs']
 #this is what we want!!!!
 # steps[] is a list of every turn the navigation makes to get from origin to destination
 steps = legs[0]['steps']
+step_distance_in_meters = steps[0]['distance']['value']
 
-print(steps)
+#keep track of battery range as we go
+currentRange = 300 #miles
+
+currentStep = 0 #miles
+
+#currentRange = currentRange - currentPath
+
+# keep track of number of stops
+
+numStops = 0
+
+total_distance = 0
+for i in range(len(steps)):
+    if steps[i]['distance']['value'] >= currentRange:
+        #do something
+    total_distance += steps[i]['distance']['value']
+    #print(steps[i]['distance'])
+
+print(total_distance)
