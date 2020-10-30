@@ -1,6 +1,5 @@
 #imports
 import json
-#import requests
 import ssl
 import urllib.request
 
@@ -10,16 +9,16 @@ ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
 
 endpoint = 'https://maps.googleapis.com/maps/api/directions/json?'
 api_key = 'AIzaSyASU7ZbDGGc70Ak7_cAWl1-Ox3UnvYA0Ms'
-origin = input("Enter starting Point -----> ").replace(' ','+')
-destination = input("Enter ending Point -----> ").replace(' ','+')
+current_range = input("Enter EV range in km -----> ")
+origin = input("Enter Starting Point -----> ").replace(' ','+')
+destination = input("Enter Ending Point -----> ").replace(' ','+')
 
 params = {"origin": origin, "destination": destination, "key": api_key}
 url_params = urlencode(params)
 url = f"{endpoint}{url_params}"
 print(url)
 
-r = requests.get(url)
-
+#send a resquest to Google Maps
 response = urllib.request.urlopen(url).read()
 directions = json.loads(response)
 routes = directions['routes']
@@ -31,21 +30,50 @@ steps = legs[0]['steps']
 step_distance_in_meters = steps[0]['distance']['value']
 
 #keep track of battery range as we go
-currentRange = 300 #miles
+#enter battery range in kilometers
+current_range = 300 #kilometers
+current_range *= 1000 #multiply by 1000 to convert to meters
+current_step = 0 #meters
 
-currentStep = 0 #miles
-
-#currentRange = currentRange - currentPath
 
 # keep track of number of stops
+num_stops = 0
+#keep track of total distance
+total_distance = 0 #meters
 
-numStops = 0
-
-total_distance = 0
 for i in range(len(steps)):
-    if steps[i]['distance']['value'] >= currentRange:
-        #do something
-    total_distance += steps[i]['distance']['value']
-    #print(steps[i]['distance'])
+    current_step = steps[i]['distance']['value']
+    if current_step >= current_range:
+        #set new waypoint to recharge
+        latitude = steps[i]['start_location']['lat']
+        longitude = steps[i]['start_location']['lng']
+        num_stops += 1
 
-print(total_distance)
+        responseStyle = 'short'  # the length of the response
+        citySize = 'cities1000000'  # the minimal number of citizens a city must have
+        radius = 100  # the radius in KM
+        maxRows = 100  # the maximum number of rows to retrieve
+        username = 'djkonrad'  # the username of your GeoNames account
+
+        endpoint = 'http://api.geonames.org/findNearbyPlaceNameJSON?'
+        params = {"lat": latitude, "lng": longitude, "stlye": responseStyle, "cities": citySize, "radius": radius,
+                  "maxRows": maxRows, "username": username}
+        url_params = urlencode(params)
+        url = f"{endpoint}{url_params}"
+        geo_response = urllib.request.urlopen(url).read()
+        pop = json.loads(geo_response)
+        
+        #prints every city in a radius of 100 km with a population greater than 100000
+        for i in range(len(pop['geonames'])):
+            if pop['geonames'][i]['population'] >= 100000:
+                print(str(pop['geonames'][i]['toponymName']) + ": " + str(pop['geonames'][i]['population']))
+
+
+        print(url)
+        exit(0)
+    #else
+    current_range -= current_step
+    total_distance += current_step
+
+print("Total Distance: " + str(total_distance/1000) + " km") #divide by 1000 to output result in km
+print("Remaining Battery Range: " + str(current_range/1000) + " km") ##divide by 1000 to output result in km
