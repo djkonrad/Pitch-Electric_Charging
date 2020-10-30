@@ -2,14 +2,66 @@
 import json
 import ssl
 import urllib.request
-
 from urllib.parse import urlencode
-
 ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
+
+def print_cities_greater_one_million(lat,lng):
+    latitude = lat
+    longitude = lng
+
+    # Geonames Parameters
+    responseStyle = 'short'  # the length of the response
+    citySize = 'cities1000000'  # the minimal number of citizens a city must have
+    radius = 100  # the radius in KM
+    maxRows = 100  # the maximum number of rows to retrieve
+    username = 'djkonrad'  # the username of your GeoNames account
+
+    # seting up the url request
+    endpoint = 'http://api.geonames.org/findNearbyPlaceNameJSON?'
+    params = {"lat": latitude, "lng": longitude, "stlye": responseStyle, "cities": citySize, "radius": radius,
+              "maxRows": maxRows, "username": username}
+    url_params = urlencode(params)
+    url = f"{endpoint}{url_params}"
+    geo_response = urllib.request.urlopen(url).read()
+    pop = json.loads(geo_response)
+
+    for i in range(len(pop['geonames'])):
+        if pop['geonames'][i]['population'] >= 1000000:
+            print(str(pop['geonames'][i]['toponymName']) + ": " + str(pop['geonames'][i]['population']))
+
+def city_greater_one_million(lat,lng): #passes latitude and longitude as parameters
+
+    latitude = lat
+    longitude = lng
+
+    #Geonames Parameters
+    responseStyle = 'short'  # the length of the response
+    citySize = 'cities1000000'  # the minimal number of citizens a city must have
+    radius = 100  # the radius in KM
+    maxRows = 1000  # the maximum number of rows to retrieve
+    username = 'djkonrad'  # the username of your GeoNames account
+
+    #seting up the url request
+    endpoint = 'http://api.geonames.org/findNearbyPlaceNameJSON?'
+    params = {"lat": latitude, "lng": longitude, "stlye": responseStyle, "cities": citySize, "radius": radius, "maxRows": maxRows, "username": username}
+    url_params = urlencode(params)
+    url = f"{endpoint}{url_params}"
+    geo_response = urllib.request.urlopen(url).read()
+    pop = json.loads(geo_response)
+
+    for i in range(len(pop['geonames'])):
+        if pop['geonames'][i]['population'] >= 1100000:
+            #stops.append(str(pop['geonames'][i]['toponymName']))
+            print(str(pop['geonames'][i]['toponymName']))
+            return 1
+    return 0
+
+
+
 
 endpoint = 'https://maps.googleapis.com/maps/api/directions/json?'
 api_key = 'AIzaSyASU7ZbDGGc70Ak7_cAWl1-Ox3UnvYA0Ms'
-current_range = input("Enter EV range in km -----> ")
+current_range = input("Enter EV range in KM -----> ")
 origin = input("Enter Starting Point -----> ").replace(' ','+')
 destination = input("Enter Ending Point -----> ").replace(' ','+')
 
@@ -44,33 +96,10 @@ total_distance = 0 #meters
 for i in range(len(steps)):
     current_step = steps[i]['distance']['value']
     if current_step >= current_range:
-        #set new waypoint to recharge
-        latitude = steps[i]['start_location']['lat']
-        longitude = steps[i]['start_location']['lng']
-        num_stops += 1
+        #check if there is a city with a population greater thn 10000000
+        if city_greater_one_million(steps[i]['start_location']['lat'], steps[i]['start_location']['lng']):
+            num_stops = num_stops +1
 
-        responseStyle = 'short'  # the length of the response
-        citySize = 'cities1000000'  # the minimal number of citizens a city must have
-        radius = 100  # the radius in KM
-        maxRows = 100  # the maximum number of rows to retrieve
-        username = 'djkonrad'  # the username of your GeoNames account
-
-        endpoint = 'http://api.geonames.org/findNearbyPlaceNameJSON?'
-        params = {"lat": latitude, "lng": longitude, "stlye": responseStyle, "cities": citySize, "radius": radius,
-                  "maxRows": maxRows, "username": username}
-        url_params = urlencode(params)
-        url = f"{endpoint}{url_params}"
-        geo_response = urllib.request.urlopen(url).read()
-        pop = json.loads(geo_response)
-        
-        #prints every city in a radius of 100 km with a population greater than 100000
-        for i in range(len(pop['geonames'])):
-            if pop['geonames'][i]['population'] >= 100000:
-                print(str(pop['geonames'][i]['toponymName']) + ": " + str(pop['geonames'][i]['population']))
-
-
-        print(url)
-        exit(0)
     #else
     current_range -= current_step
     total_distance += current_step
